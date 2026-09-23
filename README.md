@@ -82,7 +82,7 @@ Neither `update` nor `batch` touches days without any Toggl data, nor days in an
 
 
 # Upgrading from 2.x (Toggl Track)
-Version 3 reads from Toggl 2.0 (Focus) instead of Toggl Track. Re-run `t2v config ...` to get a configuration with the new `BaseUrl` and `OrganizationId`, and `t2v credentials` to store your new Toggl API key. If you still track in Toggl Track, stay on version 2.x.
+Version 3 reads from Toggl 2.0 (Focus) instead of Toggl Track. Re-run `t2v config ...` (or `t2v reset` to fall back to the built-in defaults) to get a configuration with the new `BaseUrl` and `OrganizationId`, and `t2v credentials` to store your new Toggl API key. If you still track in Toggl Track, stay on version 2.x.
 
 
 # Configuring Toggl
@@ -115,6 +115,7 @@ Commands:
   batch <from> <to>   updates Vertec for every day in a date range with the data retrieved from Toggl
   credentials         configures Toggl & Vertec credentials throught the command line
   config <configUrl>  Retrieves a pre-defined configuration file from the given URL and installs it in the user's home directory
+  reset               Resets the configuration file in the user's home directory to an empty one, so the built-in defaults apply
 ```
 * `t2v --help [command]` - Prints description and all options for any given command
 

@@ -44,6 +44,7 @@ public class Program
                 new ClearCommand().Bind(kernel),
                 new CredentialsCommand().Bind(kernel),
                 new ConfigCommand().Bind(kernel),
+                new ResetCommand().Bind(kernel),
                 new OvertimeCommand().Bind(kernel)
             };
             rootCommand.Description = "Synchronizes time entries from Toggl (Track) to Vertec";
