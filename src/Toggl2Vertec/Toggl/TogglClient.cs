@@ -21,6 +21,7 @@ public class TogglClient
     private readonly TogglSettings _settings;
     private readonly HttpClient _httpClient;
     private readonly ICliLogger _logger;
+    private readonly long? _organizationId;
     private long? _workspaceId;
 
     public TogglClient(Settings settings, CredentialStore credStore, ICliLogger logger)
@@ -30,10 +31,13 @@ public class TogglClient
         _baseUrl = _settings.BaseUrl;
         _workspaceId = _settings.WorkspaceId;
 
+        _organizationId = credStore.TogglOrganizationId;
         var credentials = credStore.TogglCredentials;
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credentials.Password);
         _logger = logger;
     }
+
+    public const string MissingOrganizationMessage = "Toggl organization ID missing - run 't2v credentials'";
 
     public JsonElement FetchUserSettings()
     {
@@ -46,14 +50,14 @@ public class TogglClient
     /// </summary>
     public IList<TimeEntry> FetchTimeEntries(DateTime from, DateTime to)
     {
-        if (!_settings.OrganizationId.HasValue)
+        if (!_organizationId.HasValue)
         {
-            throw new ToggleClientException("Toggl.OrganizationId is not configured - re-run 't2v config' to install a Toggl 2.0 configuration");
+            throw new ToggleClientException(MissingOrganizationMessage);
         }
 
         var dateFrom = Uri.EscapeDataString(new DateTimeOffset(from.Date).ToString("yyyy-MM-ddTHH:mm:sszzz"));
         var dateTo = Uri.EscapeDataString(new DateTimeOffset(to.Date.AddDays(1)).ToString("yyyy-MM-ddTHH:mm:sszzz"));
-        var data = Fetch($"/organizations/{_settings.OrganizationId}/workspaces/{GetWorkspace()}/time-entries/stream?date_from={dateFrom}&date_to={dateTo}&include_taskless=true");
+        var data = Fetch($"/organizations/{_organizationId}/workspaces/{GetWorkspace()}/time-entries/stream?date_from={dateFrom}&date_to={dateTo}&include_taskless=true");
 
         return ParseTimeEntries(data);
     }

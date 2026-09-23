@@ -7,6 +7,7 @@ public class CredentialArgs : ICommonArgs
     public bool Prompt { get; set; }
     public bool NoToggl { get; set; }
     public string Toggl { get; set; }
+    public long? TogglOrg { get; set; }
     public string Vertec { get; set; }
     public bool NoVertec { get; set; }
 }

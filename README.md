@@ -1,4 +1,4 @@
-# Why Toggl2Vertec?
+﻿# Why Toggl2Vertec?
 This is a command line tool to perform one-way synchronization from time entered in [Toggl 2.0 (Focus)](https://focus.toggl.com/) into a corporate [Vertec](https://www.vertec.com/ch/) instance. Work time entry isn't exactly a strength of Vertec and it also doesn't provide any good options to manage a personalized _model_ for data entry. On the other side, Toggl is a very popular tool to do just that and with a couple of conventions around the Toggl project configuration and a tool like Toggl2Vertec, it is very easy to separate the work time entry to use Toggl and then just collect and aggregate that data and put it into Vertec.
 
 This is a CLI (command line interface) tool. If you are not familiar with and unwilling to learn about the advantages of CLI tools, then this is not the tool for you. It's _primary_ audience are developers and other technically inclined demographics.
@@ -39,7 +39,7 @@ The instructions here assume that you have installed Toggl2Vertec using _Scoop_,
 ## Initial Configuration
 Before you can do anything useful, you will need a proper configuration which consists of two parts: the configuration file that includes the URL of your Vertec server and your Toggl and Vertec credentials.
 
-To get a Toggl API key, go to https://focus.toggl.com/settings and create one (it is only shown once and creating a new one revokes the old one). Use it together with your Vertec login credentials when prompted while running
+To get a Toggl API key, go to https://focus.toggl.com/settings and create one (it is only shown once and creating a new one revokes the old one). You will also be asked for your Toggl organization ID, which an API key cannot look up: open focus.toggl.com, then your browser's DevTools → Network, and take the number after `/api/organizations/` in any request URL. Enter both together with your Vertec login credentials when prompted while running
 ```
 t2v credentials
 ```
@@ -78,11 +78,16 @@ t2v batch <FROM> [<TO>] [--force]
 t2v batch 2022-05-01 2022-05-25 --force
 ```
 
-Neither `update` nor `batch` touches days without any Toggl data, nor days in an already validated past month.
+Catch up on every day of the current month that has no data in Vertec yet (weekends and public holidays don't count, vacation counts as data). It shows the days it found and asks for confirmation before writing; days that already have data are never touched.
+```
+t2v auto
+```
+
+Neither `update`, `batch` nor `auto` touches days without any Toggl data, nor days in an already validated past month.
 
 
 # Upgrading from 2.x (Toggl Track)
-Version 3 reads from Toggl 2.0 (Focus) instead of Toggl Track. Re-run `t2v config ...` (or `t2v reset` to fall back to the built-in defaults) to get a configuration with the new `BaseUrl` and `OrganizationId`, and `t2v credentials` to store your new Toggl API key. If you still track in Toggl Track, stay on version 2.x.
+Version 3 reads from Toggl 2.0 (Focus) instead of Toggl Track. Re-run `t2v config ...` (or `t2v reset` to fall back to the built-in defaults) to get a configuration with the new `BaseUrl`, and `t2v credentials` to store your new Toggl API key and your Toggl organization ID. If you still track in Toggl Track, stay on version 2.x.
 
 
 # Configuring Toggl
@@ -113,6 +118,7 @@ Commands:
   list <date>         lists the aggregated data from Toggl in Vertec form [default: 12.04.2022 00:00:00]
   update <date>       updates Vertec with the data retrieved from Toggl [default: 12.04.2022 00:00:00]
   batch <from> <to>   updates Vertec for every day in a date range with the data retrieved from Toggl
+  auto                updates every day of the current month that has no data in Vertec yet with the data retrieved from Toggl
   credentials         configures Toggl & Vertec credentials throught the command line
   config <configUrl>  Retrieves a pre-defined configuration file from the given URL and installs it in the user's home directory
   reset               Resets the configuration file in the user's home directory to an empty one, so the built-in defaults apply
@@ -126,10 +132,8 @@ Commands:
 "Toggl": {
   // Toggl 2.0 (Focus) API endpoint URL
   "BaseUrl": "https://focus.toggl.com/api",
-  // Target key for the Windows Credential Manager where the Toggl credentials are stored
+  // Target key for the Windows Credential Manager where the Toggl credentials (API key and organization ID) are stored
   "CredentialsKey": "t2v:toggl",
-  // Toggl organization ID (cannot be looked up with an API key) - visible in the URLs of the Toggl web app
-  "OrganizationId": 6308848,
   // optional - defaults to your current Toggl workspace
   "WorkspaceId": 123456
 },

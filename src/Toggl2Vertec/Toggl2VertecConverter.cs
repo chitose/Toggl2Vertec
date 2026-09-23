@@ -77,6 +77,55 @@ public class Toggl2VertecConverter
             _updateProcess.Process(workingDay);
         }
 
+    /// <summary>
+    /// Writes the days one by one, stopping at the first failure, and prints a summary of all days.
+    /// Empty days are skipped, and so are days not contained in <paramref name="only"/> if given.
+    /// </summary>
+    /// <returns>true if no day failed</returns>
+    public bool UpdateDaysInVertec(IEnumerable<WorkingDay> days, bool force, ISet<DateTime> only = null)
+    {
+            var report = new List<(DateTime Date, string Result)>();
+            var failed = false;
+            foreach (var day in days)
+            {
+                if (failed)
+                {
+                    report.Add((day.Date, "not attempted"));
+                }
+                else if (only != null && !only.Contains(day.Date))
+                {
+                    report.Add((day.Date, "skipped (filled)"));
+                }
+                else if (day.IsEmpty)
+                {
+                    report.Add((day.Date, "skipped (empty)"));
+                }
+                else
+                {
+                    try
+                    {
+                        _logger.LogContent($"Updating {day.Date.ToDateString()} ...");
+                        UpdateDayInVertec(day, force);
+                        report.Add((day.Date, force ? "forced" : "updated"));
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError($"Updating {day.Date.ToDateString()} failed: {e.Message}");
+                        report.Add((day.Date, "failed"));
+                        failed = true;
+                    }
+                }
+            }
+
+            _logger.LogContent("Summary:");
+            foreach (var (date, result) in report)
+            {
+                _logger.LogContent($"  {date.ToDateString()} {date.DayOfWeek,-9} {result}");
+            }
+
+            return !failed;
+        }
+
     public void ClearDayInVertec(DateTime date)
     {
             _clearProcessor.Process(date);

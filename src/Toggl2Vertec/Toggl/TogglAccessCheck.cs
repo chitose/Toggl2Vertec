@@ -9,11 +9,13 @@ public class TogglAccessCheck : BaseCheckStep
 {
     private readonly TogglClient _client;
     private readonly Settings _settings;
+    private readonly CredentialStore _credentialStore;
 
-    public TogglAccessCheck(TogglClient client, Settings settings)
+    public TogglAccessCheck(TogglClient client, Settings settings, CredentialStore credentialStore)
     {
         _client = client;
         _settings = settings;
+        _credentialStore = credentialStore;
     }
 
     public override bool Check(ICliLogger logger)
@@ -21,9 +23,9 @@ public class TogglAccessCheck : BaseCheckStep
         logger.LogPartial(logger.CreateText($"Checking Toggl API access ({_settings.Toggl.BaseUrl}/users/me/settings): "));
         try
         {
-            if (!_settings.Toggl.OrganizationId.HasValue)
+            if (!_credentialStore.TogglOrganizationId.HasValue)
             {
-                throw new Exception("Toggl.OrganizationId is not configured - re-run 't2v config' to install a Toggl 2.0 configuration");
+                throw new Exception(TogglClient.MissingOrganizationMessage);
             }
 
             _client.FetchUserSettings().GetProperty("current_workspace_id");
