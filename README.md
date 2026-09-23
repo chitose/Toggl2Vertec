@@ -21,7 +21,7 @@ You can get scoop from [scoop.sh](https://scoop.sh/).
 
 Install Toggl2Vertec 
 ```
-scoop install https://raw.githubusercontent.com/lord-executor/Toggl2Vertec/main/t2v.json
+scoop install https://raw.githubusercontent.com/chitose/Toggl2Vertec/main/t2v.json
 ```
 
 When you run `scoop update`, it will also look for Toggl2Vertec updates, but if you want to _only_ update Toggl2Vertec, do this
@@ -44,9 +44,9 @@ To get a Toggl API key, go to https://focus.toggl.com/settings and create one (i
 t2v credentials
 ```
 
-To get a reasonable starting configuration this repository contains a set of managed configurations under https://github.com/lord-executor/Toggl2Vertec/tree/main/configs any of which you can install by chosing the right configuration file and then executing the following command
+To get a reasonable starting configuration this repository contains a set of managed configurations under https://github.com/chitose/Toggl2Vertec/tree/main/configs any of which you can install by chosing the right configuration file and then executing the following command
 ```
-t2v config https://raw.githubusercontent.com/lord-executor/Toggl2Vertec/main/configs/[YOUR-CHOSEN-CONFIG].json
+t2v config https://raw.githubusercontent.com/chitose/Toggl2Vertec/main/configs/[YOUR-CHOSEN-CONFIG].json
 ```
 
 Now that everything is configured, you can _check_ your configuration by running
@@ -255,9 +255,9 @@ should return something like "6.0.102"
 Clone this repository
 ```
 # _with_ SSH key (which as a developer you really should have)
-git clone git@github.com:lord-executor/Toggl2Vertec.git
+git clone git@github.com:chitose/Toggl2Vertec.git
 # _without_ an SSH key (shame on you)
-git clone https://github.com/lord-executor/Toggl2Vertec.git
+git clone https://github.com/chitose/Toggl2Vertec.git
 ```
 
 Go to the source directory and build to make sure everything is OK
@@ -305,7 +305,7 @@ t2v list --verbose
 7. Commit the current changes to the `t2v.json` config file.
 8. Tag that commit with `git tag "v$version"` (here, we include the leading "v").
 9. Push the changes with `git push` and `git push --tags`
-10. On GitHub, go to [Releases](https://github.com/lord-executor/Toggl2Vertec/releases) and draft a new release from
+10. On GitHub, go to [Releases](https://github.com/chitose/Toggl2Vertec/releases) and draft a new release from
     the tag that we just created. Make sure that the title of the release matches the git tag.
 11. Write the release notes and attach the previously created ZIP archive to the release, then publish the release.
 12. Get the new release with `scoop update t2v`.

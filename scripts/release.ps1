@@ -11,16 +11,24 @@ if (!$version) {
 Write-Output "Building package for release version $version"
 
 $repoRoot = Resolve-Path "$PSScriptRoot/.."
-$solutionFile = "$repoRoot\src\Toggl2Vertec.sln"
+$projectFile = "$repoRoot\src\Toggl2Vertec\Toggl2Vertec.csproj"
+# outside the repo so that the "git add ." below doesn't pick it up
+$publishDir = Join-Path ([System.IO.Path]::GetTempPath()) "t2v-publish"
 $releaseFile = "$repoRoot\t2v-win-x64.zip"
 $manifestFile = "$repoRoot\t2v.json"
 $gitTag = "v$version"
 
 Push-Location $repoRoot
-dotnet publish $solutionFile -c Release -r win-x64 --no-self-contained -p:Version="$version"
+if (Test-Path $publishDir) { Remove-Item -Recurse -Force $publishDir }
+# only the app project - the solution also contains the tests
+dotnet publish $projectFile -c Release -r win-x64 --no-self-contained -p:Version="$version" -o $publishDir
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Publish failed"
+    Pop-Location
+    exit -1
+}
 
-
-Compress-Archive -Path "$repoRoot\src\Toggl2Vertec\bin\Release\net6.0\win-x64\publish\*" -DestinationPath $releaseFile
+Compress-Archive -Path "$publishDir\*" -DestinationPath $releaseFile -Force
 $sha256 = (Get-FileHash -Algorithm SHA256 $releaseFile).Hash
 
 $manifest = Get-Content $manifestFile | ConvertFrom-Json
