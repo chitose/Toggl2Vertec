@@ -35,7 +35,8 @@ $manifest = Get-Content $manifestFile | ConvertFrom-Json
 $manifest.version = $version
 $manifest.hash = $sha256
 $manifest.url = $manifest.url -replace "/v\d+\.\d+\.\d+/","/$gitTag/"
-$manifest | ConvertTo-Json > $manifestFile
+# UTF-8 without BOM - '>' writes UTF-16 in Windows PowerShell 5.1, which scoop cannot parse
+[System.IO.File]::WriteAllText($manifestFile, ($manifest | ConvertTo-Json), (New-Object System.Text.UTF8Encoding $false))
 
 git add .
 git commit -m "Release $gitTag"
