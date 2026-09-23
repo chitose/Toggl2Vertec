@@ -50,10 +50,11 @@ public class CredentialsCommand : CustomCommand<CredentialArgs>
             {
                 if (args.Prompt && !args.NoToggl)
                 {
-                    Console.WriteLine("Please enter your Toggl API key (https://focus.toggl.com/settings):");
-                    var apiKey = Console.ReadLine().Trim();
-                    Console.WriteLine("Please enter your Toggl organization ID (see the URL in focus.toggl.com):");
-                    if (!long.TryParse(Console.ReadLine().Trim(), out var organizationId))
+                    var hasToggl = _credentialStore.TogglCredentialsExist;
+                    var apiKey = Prompt("Please enter your Toggl API key (https://focus.toggl.com/settings)", hasToggl ? _credentialStore.TogglCredentials.Password : null);
+                    var currentOrganizationId = hasToggl ? _credentialStore.TogglOrganizationId?.ToString() : null;
+                    var organizationInput = Prompt($"Please enter your Toggl organization ID (see the URL in focus.toggl.com){(currentOrganizationId == null ? "" : $" [{currentOrganizationId}]")}", currentOrganizationId);
+                    if (!long.TryParse(organizationInput, out var organizationId))
                     {
                         _logger.LogError("The organization ID has to be a number.");
                         return Task.FromResult(ResultCodes.Failed);
@@ -70,8 +71,8 @@ public class CredentialsCommand : CustomCommand<CredentialArgs>
             {
                 if (args.Prompt && !args.NoVertec)
                 {
-                    Console.WriteLine("Please enter your Vertec credentials in the form 'username:password'");
-                    var creds = Console.ReadLine().Trim();
+                    var current = _credentialStore.VertecCredentialsExist ? _credentialStore.VertecCredentials : null;
+                    var creds = Prompt("Please enter your Vertec credentials in the form 'username:password'", current == null ? null : $"{current.UserName}:{current.Password}");
                     _credentialStore.SetVertecCredentials(creds, infoLogger);
                 }
             }
@@ -81,6 +82,30 @@ public class CredentialsCommand : CustomCommand<CredentialArgs>
             }
 
             return Task.FromResult(ResultCodes.Ok);
+        }
+
+        /// <summary>
+        /// Empty input keeps the current value, but only if there is one.
+        /// </summary>
+        public static string Prompt(string question, string current)
+        {
+            current = String.IsNullOrEmpty(current) ? null : current;
+            Console.WriteLine(current == null ? $"{question}:" : $"{question} - leave empty to keep the current value:");
+            while (true)
+            {
+                var input = Console.ReadLine() ?? throw new InvalidOperationException("No input available");
+                if (input.Trim().Length > 0)
+                {
+                    return input.Trim();
+                }
+
+                if (current != null)
+                {
+                    return current;
+                }
+
+                Console.WriteLine("A value is required:");
+            }
         }
     }
 }

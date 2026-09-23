@@ -109,3 +109,25 @@ public class UnfilledDayFinderTests
         Assert.Equal(new[] { new DateTime(2026, 9, 21), new DateTime(2026, 9, 23) }, unfilled);
     }
 }
+
+public class CredentialPromptTests
+{
+    private static string Prompt(string input, string? current)
+    {
+        Console.SetIn(new StringReader(input));
+        Console.SetOut(new StringWriter());
+        return Commands.Credentials.CredentialsCommand.DefaultHandler.Prompt("Value", current!);
+    }
+
+    [Fact]
+    public void EmptyInputKeepsCurrentValue() => Assert.Equal("old", Prompt("\n", "old"));
+
+    [Fact]
+    public void InputReplacesCurrentValue() => Assert.Equal("new", Prompt(" new \n", "old"));
+
+    [Fact]
+    public void EmptyInputIsRejectedWithoutCurrentValue() => Assert.Equal("new", Prompt("\n\nnew\n", null));
+
+    [Fact]
+    public void EndOfInputWithoutCurrentValueThrows() => Assert.Throws<InvalidOperationException>(() => Prompt("\n", ""));
+}
