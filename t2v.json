@@ -1,6 +1,6 @@
 {
-    "version":  "3.0.0",
-    "url":  "https://github.com/chitose/Toggl2Vertec/releases/download/v3.0.0/t2v-win-x64.zip",
+    "version":  "3.1.0",
+    "url":  "https://github.com/chitose/Toggl2Vertec/releases/download/v3.1.0/t2v-win-x64.zip",
     "description":  "Toggl 2.0 (Focus) to Vertec time entry synchronization tool",
     "bin":  [
                 [
@@ -10,5 +10,5 @@
             ],
     "license":  "MIT",
     "homepage":  "https://github.com/chitose/Toggl2Vertec",
-    "hash":  "1DE9A1824365F2713D7A1B18453F4D0C4C3948C5FAACBE2CD9E01059ADD46AE9"
+    "hash":  "AA019FC9435CACC7E4860869E110A26D09DD670537F1459C9198C0DB1C186800"
 }
