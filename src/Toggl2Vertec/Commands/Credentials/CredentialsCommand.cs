@@ -42,7 +42,7 @@ public class CredentialsCommand : CustomCommand<CredentialArgs>
             {
                 if (args.Prompt && !args.NoToggl)
                 {
-                    Console.WriteLine("Please enter your Toggl API key:");
+                    Console.WriteLine("Please enter your Toggl API key (https://focus.toggl.com/settings):");
                     var apiKey = Console.ReadLine().Trim();
                     _credentialStore.SetTogglApiKey(apiKey, infoLogger);
                 }

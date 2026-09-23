@@ -4,4 +4,7 @@ public class TogglSettings
 {
     public string BaseUrl { get; set; }
     public string CredentialsKey { get; set; }
+    public long? OrganizationId { get; set; }
+    // optional - defaults to the user's current workspace
+    public long? WorkspaceId { get; set; }
 }

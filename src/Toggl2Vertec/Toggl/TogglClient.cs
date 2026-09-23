@@ -1,75 +1,113 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
 using System.Text.Json;
 using Toggl2Vertec.Configuration;
 using Toggl2Vertec.Logging;
-using Toggl2Vertec.Tracking;
 
 namespace Toggl2Vertec.Toggl;
 
+public record TimeEntry(DateTime Start, DateTime End, string Project, string Text);
+
+/// <summary>
+/// Client for the Toggl 2.0 (Focus) API - see https://engineering.toggl.com/docs/focus/
+/// </summary>
 public class TogglClient
 {
     private readonly string _baseUrl;
+    private readonly TogglSettings _settings;
     private readonly HttpClient _httpClient;
     private readonly ICliLogger _logger;
-    private int? _workspaceId;
+    private long? _workspaceId;
 
     public TogglClient(Settings settings, CredentialStore credStore, ICliLogger logger)
     {
         _httpClient = new HttpClient();
-        _baseUrl = settings.Toggl.BaseUrl;
+        _settings = settings.Toggl;
+        _baseUrl = _settings.BaseUrl;
+        _workspaceId = _settings.WorkspaceId;
 
         var credentials = credStore.TogglCredentials;
-        var authHeader = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($"{credentials.Password}:api_token")));
-        _httpClient.DefaultRequestHeaders.Authorization = authHeader;
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credentials.Password);
         _logger = logger;
     }
 
-    public JsonElement FetchProfileDetails()
+    public JsonElement FetchUserSettings()
     {
-        return Fetch("/api/v9/me");
+        return Fetch("/users/me/settings");
     }
 
-    public IEnumerable<SummaryGroup> FetchDailySummary(DateTime date)
+    /// <summary>
+    /// Fetches all time entries from the start of <paramref name="from"/> until the end of <paramref name="to"/> (local time)
+    /// with a single request to be gentle on the API quota.
+    /// </summary>
+    public IList<TimeEntry> FetchTimeEntries(DateTime from, DateTime to)
     {
-        var workspaceId = GetDefaultWorkspace();
-        var summary = Fetch($"/reports/api/v2/summary?user_agent=Toggl2Vertec&workspace_id={workspaceId}&since={date.ToDateString()}&until={date.ToDateString()}");
-
-        var entries = new List<SummaryGroup>();
-
-        foreach (var item in summary.Get("data").EnumerateArray())
+        if (!_settings.OrganizationId.HasValue)
         {
-            var title = item.Get("title.project").GetStringSafe();
-            var text = item.Get("items").EnumerateArray().Select(entry => entry.Get("title.time_entry").GetStringSafe()).ToList();
-
-            var duration = TimeSpan.FromMilliseconds(item.Get("time").GetInt32());
-            entries.Add(new SummaryGroup(title, duration, text));
+            throw new ToggleClientException("Toggl.OrganizationId is not configured - re-run 't2v config' to install a Toggl 2.0 configuration");
         }
 
-        return entries;
+        var dateFrom = Uri.EscapeDataString(new DateTimeOffset(from.Date).ToString("yyyy-MM-ddTHH:mm:sszzz"));
+        var dateTo = Uri.EscapeDataString(new DateTimeOffset(to.Date.AddDays(1)).ToString("yyyy-MM-ddTHH:mm:sszzz"));
+        var data = Fetch($"/organizations/{_settings.OrganizationId}/workspaces/{GetWorkspace()}/time-entries/stream?date_from={dateFrom}&date_to={dateTo}&include_taskless=true");
+
+        return ParseTimeEntries(data);
     }
 
-    public IEnumerable<LogEntry> FetchDailyDetails(DateTime date)
+    public static IList<TimeEntry> ParseTimeEntries(JsonElement data)
     {
-        var workspaceId = GetDefaultWorkspace();
-        var details = Fetch($"/reports/api/v2/details?user_agent=Toggl2Vertec&workspace_id={workspaceId}&since={date.ToDateString()}&until={date.ToDateString()}");
+        var items = data.EnumerateArray()
+            // only tracked activities count - breaks and planned-only entries are ignored
+            .Where(item => item.Get("type").GetStringSafe() == "activity" && item.Get("start").HasValue() && item.Get("duration").HasValue())
+            .Where(item => item.Get("duration").GetInt64() > 0)
+            .ToList();
 
-        return details.Get("data").EnumerateArray()
-            .Select(item => new LogEntry(item.GetProperty("start").GetDateTime(), item.GetProperty("end").GetDateTime(), ""))
-            .OrderBy(entry => entry.Start);
+        var users = items.Select(item => item.Get("toggl_user_id").HasValue() ? item.Get("toggl_user_id").GetRawText() : null).Distinct().Count();
+        if (users > 1)
+        {
+            throw new ToggleClientException($"Received time entries of {users} different users - refusing to write someone else's time into Vertec");
+        }
+
+        return items
+            .Select(item =>
+            {
+                var start = item.Get("start").GetDateTimeOffset().LocalDateTime;
+                var text = item.Get("description").GetStringSafe();
+                if (string.IsNullOrWhiteSpace(text))
+                {
+                    text = item.Get("task.name").GetStringSafe();
+                }
+
+                return new TimeEntry(start, start.AddSeconds(item.Get("duration").GetInt64()), item.Get("project.name").GetStringSafe(), text);
+            })
+            .OrderBy(entry => entry.Start)
+            .ToList();
     }
 
-    private int GetDefaultWorkspace()
+    public static void EnsureSuccess(HttpResponseMessage response)
+    {
+        if (response.StatusCode == HttpStatusCode.PaymentRequired)
+        {
+            var resetsIn = response.Headers.TryGetValues("X-Toggl-Quota-Resets-In", out var values) ? values.First() : "?";
+            throw new ToggleClientException($"Toggl API quota exceeded, resets in {resetsIn} seconds");
+        }
+
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            throw new ToggleClientException($"Unexpected response from the server: {response.StatusCode}");
+        }
+    }
+
+    private long GetWorkspace()
     {
         if (!_workspaceId.HasValue)
         {
-            var result = FetchProfileDetails();
-            _workspaceId = result.GetProperty("default_workspace_id").GetInt32();
-            _logger.LogInfo($"Toggle Workspace ID: {_workspaceId.Value}");
+            _workspaceId = FetchUserSettings().GetProperty("current_workspace_id").GetInt64();
+            _logger.LogInfo($"Toggl Workspace ID: {_workspaceId.Value}");
         }
 
         return _workspaceId.Value;
@@ -79,13 +117,8 @@ public class TogglClient
     {
         var url = $"{_baseUrl}{path}";
         _logger.LogInfo($"GET {url}");
-        var request = new HttpRequestMessage(HttpMethod.Get, url);
-        var result = _httpClient.SendAsync(request).Result;
-
-        if (result.StatusCode != System.Net.HttpStatusCode.OK)
-        {
-            throw new ToggleClientException($"Unexpected response from the server: {result.StatusCode}");
-        }
+        var result = _httpClient.Send(new HttpRequestMessage(HttpMethod.Get, url));
+        EnsureSuccess(result);
 
         var json = result.Content.ReadAsStringAsync().Result;
         _logger.LogDebug(new DebugContent("Response", () => json));

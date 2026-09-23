@@ -1,6 +1,7 @@
 ﻿using Ninject;
 using System;
 using System.CommandLine;
+using Toggl2Vertec.Commands.Batch;
 using Toggl2Vertec.Commands.Check;
 using Toggl2Vertec.Commands.Clear;
 using Toggl2Vertec.Commands.Config;
@@ -39,9 +40,11 @@ public class Program
                 new CheckCommand().Bind(kernel),
                 new ListCommand().Bind(kernel),
                 new UpdateCommand().Bind(kernel),
+                new BatchCommand().Bind(kernel),
                 new ClearCommand().Bind(kernel),
                 new CredentialsCommand().Bind(kernel),
                 new ConfigCommand().Bind(kernel),
+                new ResetCommand().Bind(kernel),
                 new OvertimeCommand().Bind(kernel)
             };
             rootCommand.Description = "Synchronizes time entries from Toggl (Track) to Vertec";

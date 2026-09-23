@@ -1,7 +1,8 @@
 {
   "Toggl": {
-    "BaseUrl": "https://api.track.toggl.com",
-    "CredentialsKey": "t2v:toggl"
+    "BaseUrl": "https://focus.toggl.com/api",
+    "CredentialsKey": "t2v:toggl",
+    "OrganizationId": 6308848
   },
   "Vertec": {
     "Version": "6.5",

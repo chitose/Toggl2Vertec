@@ -8,4 +8,5 @@ public class SyncArgs : ICommonArgs
     public bool Debug { get; set; }
     public DateTime Date { get; set; }
     public DateTime? TargetDate { get; set; }
+    public bool Force { get; set; }
 }

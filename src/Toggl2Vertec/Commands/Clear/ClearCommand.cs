@@ -29,7 +29,7 @@ public class ClearCommand : CustomCommand<SyncArgs>
 
         public Task<int> InvokeAsync(InvocationContext context, SyncArgs args)
         {
-            if (args.Date.Month < DateTime.Now.Month && (!args.TargetDate.HasValue || args.TargetDate.Value.Month < DateTime.Now.Month))
+            if (args.Date.IsInPastMonth(DateTime.Today))
             {
                 _logger.LogError("Date cannot be in the past month (already validated in Vertec).");
                 return Task.FromResult(ResultCodes.InvalidDate);
