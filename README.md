@@ -1,5 +1,5 @@
 # Why Toggl2Vertec?
-This is a command line tool to perform one-way synchronization from time entered in [Toggl Track](https://track.toggl.com/) into a corporate [Vertec](https://www.vertec.com/ch/) instance. Work time entry isn't exactly a strength of Vertec and it also doesn't provide any good options to manage a personalized _model_ for data entry. On the other side, Toggl is a very popular tool to do just that and with a couple of conventions around the Toggl project configuration and a tool like Toggl2Vertec, it is very easy to separate the work time entry to use Toggl and then just collect and aggregate that data and put it into Vertec.
+This is a command line tool to perform one-way synchronization from time entered in [Toggl 2.0 (Focus)](https://focus.toggl.com/) into a corporate [Vertec](https://www.vertec.com/ch/) instance. Work time entry isn't exactly a strength of Vertec and it also doesn't provide any good options to manage a personalized _model_ for data entry. On the other side, Toggl is a very popular tool to do just that and with a couple of conventions around the Toggl project configuration and a tool like Toggl2Vertec, it is very easy to separate the work time entry to use Toggl and then just collect and aggregate that data and put it into Vertec.
 
 This is a CLI (command line interface) tool. If you are not familiar with and unwilling to learn about the advantages of CLI tools, then this is not the tool for you. It's _primary_ audience are developers and other technically inclined demographics.
 
@@ -39,7 +39,7 @@ The instructions here assume that you have installed Toggl2Vertec using _Scoop_,
 ## Initial Configuration
 Before you can do anything useful, you will need a proper configuration which consists of two parts: the configuration file that includes the URL of your Vertec server and your Toggl and Vertec credentials.
 
-To find your Toggl API token, you can go to your Toggl profile under https://track.toggl.com/profile and scroll to the bottom to "API Token". There you can "click to reveal" the token and then use it together with your Vertec login credentials when prompted while running
+To get a Toggl API key, go to https://focus.toggl.com/settings and create one (it is only shown once and creating a new one revokes the old one). Use it together with your Vertec login credentials when prompted while running
 ```
 t2v credentials
 ```
@@ -67,11 +67,26 @@ Update Vertec for the day - this will override any existing entries for which th
 t2v update [DATE-IN-YYYY-MM-DD-FORM]
 # for example
 t2v update 2022-05-25
+# clear the day in Vertec first, so that it ends up containing exactly what Toggl has (Vertec 6.5 only)
+t2v update 2022-05-25 --force
 ```
+
+Update Vertec for every day of a range - `to` defaults to today and days without Toggl data are skipped. All data is collected from Toggl before anything is written and the update stops at the first day that fails; a summary of all days is printed at the end.
+```
+t2v batch <FROM> [<TO>] [--force]
+# for example
+t2v batch 2022-05-01 2022-05-25 --force
+```
+
+Neither `update` nor `batch` touches days without any Toggl data, nor days in an already validated past month.
+
+
+# Upgrading from 2.x (Toggl Track)
+Version 3 reads from Toggl 2.0 (Focus) instead of Toggl Track. Re-run `t2v config ...` to get a configuration with the new `BaseUrl` and `OrganizationId`, and `t2v credentials` to store your new Toggl API key. If you still track in Toggl Track, stay on version 2.x.
 
 
 # Configuring Toggl
-Toggl2Vertec tries to match every Toggl entry that it finds with a Vertec project. In order to do that, you need to actually include that information in your Toggl configuration and the way to do that is to add it to your Toggl project names. Based on the regular expression configured in `$.Toggl.Processors[?(@.Name == 'ProjectFilter')].VertecExpression` it will check every entry for the presence of a Vertec project ID (or "phase"). All the entries that are using the same project are aggregated into one Vertec entry, joining all the individual entry texts with a separating ";".
+Toggl2Vertec tries to match every Toggl entry that it finds with a Vertec project. In order to do that, you need to actually include that information in your Toggl configuration and the way to do that is to add it to your Toggl project names. Based on the regular expression configured in `$.Toggl.Processors[?(@.Name == 'ProjectFilter')].VertecExpression` it will check every entry for the presence of a Vertec project ID (or "phase"). Only tracked activities count (breaks and planned-only entries are ignored), and an entry without a description uses its task name instead. All the entries that are using the same project are aggregated into one Vertec entry, joining all the individual entry texts with a separating ";".
 
 Since the pattern is configurable, everybody can use their own conventions, as long as it is part of the project name.
 
@@ -97,6 +112,7 @@ Commands:
   check               checks configurations and tries to access Toggl and Vertec
   list <date>         lists the aggregated data from Toggl in Vertec form [default: 12.04.2022 00:00:00]
   update <date>       updates Vertec with the data retrieved from Toggl [default: 12.04.2022 00:00:00]
+  batch <from> <to>   updates Vertec for every day in a date range with the data retrieved from Toggl
   credentials         configures Toggl & Vertec credentials throught the command line
   config <configUrl>  Retrieves a pre-defined configuration file from the given URL and installs it in the user's home directory
 ```
@@ -107,10 +123,14 @@ Commands:
 ### Basics
 ```json
 "Toggl": {
-  // Toggl Track API endpoint URL
-  "BaseUrl": "https://api.track.toggl.com",
+  // Toggl 2.0 (Focus) API endpoint URL
+  "BaseUrl": "https://focus.toggl.com/api",
   // Target key for the Windows Credential Manager where the Toggl credentials are stored
-  "CredentialsKey": "t2v:toggl"
+  "CredentialsKey": "t2v:toggl",
+  // Toggl organization ID (cannot be looked up with an API key) - visible in the URLs of the Toggl web app
+  "OrganizationId": 6308848,
+  // optional - defaults to your current Toggl workspace
+  "WorkspaceId": 123456
 },
 ```
 

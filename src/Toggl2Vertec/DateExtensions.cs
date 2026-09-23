@@ -19,6 +19,14 @@ public static class DateExtensions
             return time.ToString("s");
         }
 
+    /// <summary>
+    /// Past months are already validated (locked) in Vertec.
+    /// </summary>
+    public static bool IsInPastMonth(this DateTime date, DateTime today)
+    {
+            return new DateTime(date.Year, date.Month, 1) < new DateTime(today.Year, today.Month, 1);
+        }
+
     public static string WeekStartDate(this DateTime date)
     {
             var diff = (7 + ((int)date.DayOfWeek - 1)) % 7;

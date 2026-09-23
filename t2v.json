@@ -1,7 +1,7 @@
 {
   "version": "2.5.0",
   "url": "https://github.com/lord-executor/Toggl2Vertec/releases/download/v2.5.0/t2v-win-x64.zip",
-  "description": "Toggl Track to Vertec time entry synchronization tool",
+  "description": "Toggl 2.0 (Focus) to Vertec time entry synchronization tool",
   "bin": [
     [
       "Toggl2Vertec.exe",
