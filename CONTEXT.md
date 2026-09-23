@@ -45,5 +45,19 @@ _Avoid_: overwrite, hard update
 An Update (or Force Update) over a contiguous date range, skipping Empty Days.
 _Avoid_: bulk update, range sync
 
+**Scheduled Day**:
+A date on which Vertec expects work from the user (target time above zero); weekends and public holidays are not.
+_Avoid_: working day (that is the Toggl-side aggregate)
+
+**Unfilled Day**:
+A Scheduled Day with no recorded time at all; vacation and absences count as recorded time.
+
+**First Unfilled Day**:
+The earliest Unfilled Day of the current month, up to today.
+
+**Catch-up**:
+An Update of every Unfilled Day from the First Unfilled Day to today, confirmed by the user before anything is written; days that already have recorded time are never touched.
+_Avoid_: auto sync
+
 **Validated Month**:
 A past calendar month that Vertec has locked; no date in it may be Updated or Cleared.

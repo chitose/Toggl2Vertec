@@ -33,9 +33,11 @@ public class CredentialStore
 
     public bool TogglCredentialsExist => CredentialManager.GetCredentials(_settings.Toggl.CredentialsKey, CredentialType.Generic) != null;
     public NetworkCredential TogglCredentials => CredentialManager.GetICredential(_settings.Toggl.CredentialsKey, CredentialType.Generic).ToNetworkCredential();
-    public void SetTogglApiKey(string apiKey, ICliLogger logger = null)
+    // the organization ID is kept in the user name slot of the Toggl credential - it cannot be looked up with an API key
+    public long? TogglOrganizationId => long.TryParse(TogglCredentials.UserName, out var id) ? id : null;
+    public void SetTogglCredentials(string apiKey, long organizationId, ICliLogger logger = null)
     {
-            var creds = new NetworkCredential("<none>", apiKey);
+            var creds = new NetworkCredential(organizationId.ToString(), apiKey);
             CredentialManager.SaveCredentials(_settings.Toggl.CredentialsKey, creds, CredentialType.Generic);
 
             logger?.LogInfo($"Updated credential target '{_settings.Toggl.CredentialsKey}'");

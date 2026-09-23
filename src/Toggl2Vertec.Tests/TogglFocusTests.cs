@@ -91,3 +91,21 @@ public class TogglFocusTests
         Assert.Equal(expected, DateTime.Parse(date).IsInPastMonth(DateTime.Parse(today)));
     }
 }
+
+public class UnfilledDayFinderTests
+{
+    [Fact]
+    public void SelectUnfilled_KeepsScheduledDaysWithoutRecordedTime()
+    {
+        var unfilled = Vertec6.UnfilledDayFinder.SelectUnfilled(new[]
+        {
+            (new DateTime(2026, 9, 18), 492L, 492L), // filled
+            (new DateTime(2026, 9, 19), 0L, 0L),     // weekend
+            (new DateTime(2026, 9, 21), 492L, 0L),   // unfilled
+            (new DateTime(2026, 9, 22), 492L, 492L), // vacation counts as recorded time
+            (new DateTime(2026, 9, 23), 492L, 0L),   // unfilled
+        });
+
+        Assert.Equal(new[] { new DateTime(2026, 9, 21), new DateTime(2026, 9, 23) }, unfilled);
+    }
+}

@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Linq;
 using System.Threading.Tasks;
 using Toggl2Vertec.Logging;
 using Toggl2Vertec.Ninject;
@@ -72,41 +70,7 @@ public class BatchCommand : CustomCommand<BatchArgs>
             _logger.LogContent($"Collecting data from {from.ToDateString()} to {to.ToDateString()}");
             var days = _converter.GetAndProcessWorkingDays(from, to);
 
-            var report = new List<(DateTime Date, string Result)>();
-            var failed = false;
-            foreach (var day in days)
-            {
-                if (failed)
-                {
-                    report.Add((day.Date, "not attempted"));
-                    continue;
-                }
-
-                if (day.IsEmpty)
-                {
-                    report.Add((day.Date, "skipped (empty)"));
-                    continue;
-                }
-
-                try
-                {
-                    _logger.LogContent($"Updating {day.Date.ToDateString()} ...");
-                    _converter.UpdateDayInVertec(day, args.Force);
-                    report.Add((day.Date, args.Force ? "forced" : "updated"));
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError($"Updating {day.Date.ToDateString()} failed: {e.Message}");
-                    report.Add((day.Date, "failed"));
-                    failed = true;
-                }
-            }
-
-            _logger.LogContent("Summary:");
-            foreach (var (date, result) in report)
-            {
-                _logger.LogContent($"  {date.ToDateString()} {date.DayOfWeek,-9} {result}");
-            }
+            var failed = !_converter.UpdateDaysInVertec(days, args.Force);
 
             return Task.FromResult(failed ? ResultCodes.Failed : ResultCodes.Ok);
         }

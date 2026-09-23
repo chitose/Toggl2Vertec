@@ -1,6 +1,7 @@
 ﻿using Ninject;
 using System;
 using System.CommandLine;
+using Toggl2Vertec.Commands.Auto;
 using Toggl2Vertec.Commands.Batch;
 using Toggl2Vertec.Commands.Check;
 using Toggl2Vertec.Commands.Clear;
@@ -41,6 +42,7 @@ public class Program
                 new ListCommand().Bind(kernel),
                 new UpdateCommand().Bind(kernel),
                 new BatchCommand().Bind(kernel),
+                new AutoCommand().Bind(kernel),
                 new ClearCommand().Bind(kernel),
                 new CredentialsCommand().Bind(kernel),
                 new ConfigCommand().Bind(kernel),
